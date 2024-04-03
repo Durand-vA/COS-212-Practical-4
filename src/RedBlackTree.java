@@ -13,7 +13,9 @@ public class RedBlackTree<T extends Comparable<T>> {
         SENTINEL = new RedBlackNode<>(null);
         NULL_NODE = new RedBlackNode<>(null);
 
-        SENTINEL.right = NULL_NODE;
+        NULL_NODE.left = NULL_NODE.right = NULL_NODE;
+
+        SENTINEL.right = SENTINEL.left = NULL_NODE;
     }
 
     public RedBlackNode<T> getRoot() {
@@ -58,7 +60,7 @@ public class RedBlackTree<T extends Comparable<T>> {
             return getParent(data, current.right);
         }
 
-        return null;
+        return NULL_NODE;
     }
 
     private void rotateRight(RedBlackNode<T> node) {
@@ -213,11 +215,258 @@ public class RedBlackTree<T extends Comparable<T>> {
     }
 
     public boolean isValidRedBlackTree() {
+        return SENTINEL.right.colour == BLACK && checkColours(SENTINEL.right) && balanced(SENTINEL.right) > 0;
+//        if (SENTINEL.right.colour != BLACK) {
+//            return false;
+//        }
+//
+//        if (!checkColours(SENTINEL.right)) {
+//            return false;
+//        }
+//
+//        if (!(balanced(SENTINEL.right) > 0)) {
+//            return false;
+//        }
+//
+//        return true;
+    }
+
+    private int balanced(RedBlackNode<T> node) {
+        if (node == NULL_NODE) {
+            return 1;
+        }
+        int leftSize = balanced(node.left);
+        int rightSize = balanced(node.right);
+
+        if (leftSize == -1 || rightSize == -1) {
+            return -1;
+        }
+
+        if (leftSize == rightSize) {
+            return leftSize + (node.colour == BLACK ? 1 : 0);
+        }
+        return -1;
+    }
+
+    private boolean checkColours(RedBlackNode<T> node) {
+        if (node == NULL_NODE) {
+            return true;
+        }
+        if (node.colour == RED) {
+            return node.left.colour == BLACK && node.right.colour == BLACK && checkColours(node.left) && checkColours(node.right);
+        }
+        if (node.colour == BLACK) {
+            return checkColours(node.left) && checkColours(node.right);
+        }
         return false;
     }
 
-    public void topDownDelete(T data) {
+    private COLOUR_STATES childrenColour(RedBlackNode<T> node) {
+        if (node.left.colour == node.right.colour) {
+            return node.left.colour == RED ? COLOUR_STATES.RED : COLOUR_STATES.BLACK;
+        }
+        return node.left.colour == RED ? COLOUR_STATES.RED_BLACK : COLOUR_STATES.BLACK_RED;
+    }
 
+    private boolean contains(T data) {
+        return contains(data, SENTINEL.right);
+    }
+
+    private boolean contains(T data, RedBlackNode<T> node) {
+        if (node == NULL_NODE) {
+            return false;
+        }
+        if (node.data.equals(data)) {
+            return true;
+        }
+        return contains(data, next(data, node));
+    }
+
+    private RedBlackNode<T> next(T data, RedBlackNode<T> node) {
+        return compare(data, node) < 0 ? node.left : node.right;
+    }
+    private RedBlackNode<T> nextSibling(T data, RedBlackNode<T> node) {
+        return !(compare(data, node) < 0) ? node.left : node.right;
+    }
+
+    private RedBlackNode<T> current;
+    private RedBlackNode<T> sibling;
+    private RedBlackNode<T> parent;
+    private RedBlackNode<T> grandparent;
+
+    public void topDownDelete(T data) {
+        if (!contains(data)) {
+            return;
+        }
+        current = sibling = parent = grandparent = NULL_NODE;
+        if (childrenColour(SENTINEL.right) == COLOUR_STATES.BLACK && !SENTINEL.right.data.equals(data)) {
+            SENTINEL.right.colour = RED;
+            grandparent = SENTINEL;
+            parent = SENTINEL.right;
+            current = next(data, SENTINEL.right);
+            sibling = nextSibling(data, SENTINEL.right);
+        } else {
+            parent = SENTINEL;
+            current = SENTINEL.right;
+        }
+
+        while (!current.data.equals(data) || (current.colour != RED && isLeaf(current))) {
+            if (childrenColour(current) == COLOUR_STATES.BLACK) {
+                // Case 2A
+                // Don't worry about current being root, literally impossible
+                switch (childrenColour(sibling)) {
+                    case BLACK:
+                        // 2A1
+                        flipColoursDelete(parent);
+                        break;
+                    case RED_BLACK:
+                        if (current == parent.left) {
+                            // 2A2
+                            rotateRight(sibling, parent);
+                            rotateLeft(parent, grandparent);
+                            current.colour = RED;
+                            parent.colour = BLACK;
+                        } else {
+                            // 2A3 MIRROR
+                            rotateRight(parent, grandparent);
+                            current.colour = RED;
+                            parent.colour = BLACK;
+                            sibling.colour = RED;
+                            sibling.left.colour = BLACK;
+                        }
+                        break;
+                    case BLACK_RED:
+                        if (current == parent.left) {
+                            // 2A3
+                            rotateLeft(parent, grandparent);
+                            current.colour = RED;
+                            parent.colour = BLACK;
+                            sibling.colour = RED;
+                            sibling.right.colour = BLACK;
+                        } else {
+                            // 2A2 MIRROR
+                            rotateLeft(sibling, parent);
+                            rotateRight(parent, grandparent);
+                            current.colour = RED;
+                            parent.colour = BLACK;
+                        }
+                        break;
+                    case RED:
+                        if (current == parent.left) {
+                            // 2A3
+                            rotateLeft(parent, grandparent);
+                            current.colour = RED;
+                            parent.colour = BLACK;
+                            sibling.colour = RED;
+                            sibling.right.colour = BLACK;
+                        } else {
+                            // 2A3 MIRROR
+                            rotateRight(parent, grandparent);
+                            current.colour = RED;
+                            parent.colour = BLACK;
+                            sibling.colour = RED;
+                            sibling.left.colour = BLACK;
+                        }
+                        break;
+                }
+                if (current.data != data)
+                    moveDownTree(data);
+            } else {
+                // Case 2B
+                moveDownTree(data);
+                if (current.colour == RED) {
+                    if (!current.data.equals(data)) {
+                        moveDownTree(data);
+                    }
+                } else {
+                    if (current == parent.left) {
+                        // 2B2
+                        rotateLeft(parent, grandparent);
+                        parent.colour = RED;
+                        sibling.colour = BLACK;
+
+                        grandparent = sibling;
+                        sibling = parent.right;
+                    } else {
+                        // 2B2 MIRROR
+                        rotateRight(parent, grandparent);
+                        parent.colour = RED;
+                        sibling.colour = BLACK;
+
+                        grandparent = sibling;
+                        sibling = parent.left;
+                    }
+                }
+            }
+        }
+
+        // If not leaf, Colour will be black or red
+        // delete smallest leaf in right subtree. If no right subtree, delete largest node in left subtree
+        // replace current data with deleted data
+        // Keep colour
+
+        // If leaf, colour will be red, simply delete
+
+        if (isLeaf(current)) {
+            if (current == parent.left) {
+                parent.left = NULL_NODE;
+            } else {
+                parent.right = NULL_NODE;
+            }
+        } else {
+            T newData = findMin(current.right);
+            newData = newData != null ? newData : findMax(current.left);
+            RedBlackNode<T> currentTemp = current;
+            topDownDelete(newData);
+            current = currentTemp;
+            current.data = newData;
+        }
+
+        SENTINEL.right.colour = BLACK;
+    }
+
+    private T findMax(RedBlackNode<T> node) {
+        if (node == NULL_NODE) {
+            return null;
+        }
+        if (node.right == NULL_NODE) {
+            return node.data;
+        }
+        return findMin(node.right);
+    }
+
+    private T findMin(RedBlackNode<T> node) {
+        if (node == NULL_NODE) {
+            return null;
+        }
+        if (node.left == NULL_NODE) {
+            return node.data;
+        }
+        return findMin(node.left);
+    }
+
+    private boolean isLeaf(RedBlackNode<T> node) {
+        return node.left == NULL_NODE && node.right == NULL_NODE;
+    }
+
+    private void moveDownTree(T data) {
+        grandparent = parent;
+        parent = current;
+        sibling = nextSibling(data, current);
+        current = next(data, current);
+    }
+
+    private void flipColoursDelete(RedBlackNode<T> node) {
+        node.left.colour = RED;
+        node.right.colour = RED;
+        node.colour = BLACK;
+    }
+
+    private int compare(T data, RedBlackNode<T> node) {
+        if (node == SENTINEL) {
+            return 1;
+        }
+        return Integer.compare(data.compareTo(node.data), 0);
     }
 
     /* -------------------------------------------------------------------------- */
@@ -263,4 +512,8 @@ public class RedBlackTree<T extends Comparable<T>> {
 
 enum STATE {
     STOP_CHECK, CHECK, SKIP_CHECK
+}
+
+enum COLOUR_STATES {
+    BLACK, RED, RED_BLACK, BLACK_RED
 }
