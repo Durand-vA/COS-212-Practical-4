@@ -279,6 +279,120 @@ public class Main {
                 "        │   ┌── (285)\n" +
                 "        └── 53\n");
 
+        RedBlackTree<Integer> emptyTree = new RedBlackTree<>();
+
+        emptyTree.topDownDelete(120);
+        assertEquals("emptyTree delete", emptyTree.toString(), "Empty tree");
+
+        RedBlackTree<Integer> oneElementTree = new RedBlackTree<>();
+        oneElementTree.bottomUpInsert(10);
+
+        oneElementTree.topDownDelete(10);
+        assertEquals("oneElementTree delete", oneElementTree.toString(), "Empty tree");
+
+        oneElementTree.bottomUpInsert(10);
+        oneElementTree.bottomUpInsert(112);
+        oneElementTree.topDownDelete(112);
+        assertEquals("oneElementTree delete", oneElementTree.toString(), "└── 10\n");
+
+        oneElementTree.bottomUpInsert(112);
+        oneElementTree.topDownDelete(10);
+        assertEquals("oneElementTree delete", oneElementTree.toString(), "└── 112\n");
+
+        RedBlackTree<Integer> tree4;
+
+        generateTree4(tree4 = new RedBlackTree<>());
+        tree4.topDownDelete(5);
+
+        assertEquals("delete 5 from tree4", tree4.toString(), "│           ┌── (956)\n" +
+                "│       ┌── 911\n" +
+                "│       │   └── (776)\n" +
+                "│   ┌── 630\n" +
+                "│   │   │       ┌── (553)\n" +
+                "│   │   │   ┌── 426\n" +
+                "│   │   │   │   └── (376)\n" +
+                "│   │   └── (373)\n" +
+                "│   │       └── 354\n" +
+                "└── 342\n" +
+                "    │           ┌── (333)\n" +
+                "    │       ┌── 328\n" +
+                "    │   ┌── 317\n" +
+                "    │   │   └── 150\n" +
+                "    └── (124)\n" +
+                "        │   ┌── 120\n" +
+                "        │   │   └── (90)\n" +
+                "        └── 45\n" +
+                "            │   ┌── 20\n" +
+                "            └── (13)\n" +
+                "                └── 10\n");
+
+        tree4.topDownDelete(317);
+
+        assertEquals("delete 317 from tree4", tree4.toString(), "│           ┌── (956)\n" +
+                "│       ┌── 911\n" +
+                "│       │   └── (776)\n" +
+                "│   ┌── 630\n" +
+                "│   │   │       ┌── (553)\n" +
+                "│   │   │   ┌── 426\n" +
+                "│   │   │   │   └── (376)\n" +
+                "│   │   └── (373)\n" +
+                "│   │       └── 354\n" +
+                "└── 342\n" +
+                "    │           ┌── 333\n" +
+                "    │       ┌── (328)\n" +
+                "    │       │   └── 150\n" +
+                "    │   ┌── 124\n" +
+                "    │   │   └── 120\n" +
+                "    │   │       └── (90)\n" +
+                "    └── (45)\n" +
+                "        │   ┌── 20\n" +
+                "        └── 13\n" +
+                "            └── 10\n");
+
+        tree4.topDownDelete(13);
+
+        assertEquals("delete 13 from tree4", tree4.toString(), "│           ┌── (956)\n" +
+                "│       ┌── 911\n" +
+                "│       │   └── (776)\n" +
+                "│   ┌── 630\n" +
+                "│   │   │       ┌── (553)\n" +
+                "│   │   │   ┌── 426\n" +
+                "│   │   │   │   └── (376)\n" +
+                "│   │   └── (373)\n" +
+                "│   │       └── 354\n" +
+                "└── 342\n" +
+                "    │       ┌── 333\n" +
+                "    │   ┌── 328\n" +
+                "    │   │   └── 150\n" +
+                "    └── (124)\n" +
+                "        │   ┌── 120\n" +
+                "        │   │   └── (90)\n" +
+                "        └── 45\n" +
+                "            └── 20\n" +
+                "                └── (10)\n");
+
+        System.out.println(tree4.toVis());
+
+        tree4.topDownDelete(354);
+
+        assertEquals("delete 354 from tree4", tree4.toString(), "│               ┌── (956)\n" +
+                "│           ┌── 911\n" +
+                "│           │   └── (776)\n" +
+                "│       ┌── 630\n" +
+                "│       │   │   ┌── 553\n" +
+                "│       │   └── (426)\n" +
+                "│       │       │   ┌── (376)\n" +
+                "│       │       └── 373\n" +
+                "│   ┌── (342)\n" +
+                "│   │   │   ┌── 333\n" +
+                "│   │   └── 328\n" +
+                "│   │       └── 150\n" +
+                "└── 124\n" +
+                "    │   ┌── 120\n" +
+                "    │   │   └── (90)\n" +
+                "    └── 45\n" +
+                "        └── 20\n" +
+                "            └── (10)\n");
 
         end_suite();
 
@@ -291,5 +405,45 @@ public class Main {
 
         end_tests();
 
+    }
+
+    private static void generateTree4(RedBlackTree<Integer> tree) {
+        tree.bottomUpInsert(328);
+        tree.bottomUpInsert(630);
+        tree.bottomUpInsert(956);
+        tree.bottomUpInsert(309);
+        tree.bottomUpInsert(124);
+        tree.bottomUpInsert(553);
+        tree.bottomUpInsert(911);
+        tree.bottomUpInsert(342);
+        tree.bottomUpInsert(218);
+        tree.bottomUpInsert(354);
+        tree.bottomUpInsert(317);
+        tree.bottomUpInsert(253);
+        tree.bottomUpInsert(281);
+        tree.bottomUpInsert(333);
+        tree.bottomUpInsert(776);
+        tree.bottomUpInsert(373);
+        tree.bottomUpInsert(426);
+        tree.bottomUpInsert(45);
+        tree.bottomUpInsert(376);
+        tree.bottomUpInsert(13);
+
+        tree.topDownDelete(281);
+        tree.topDownDelete(218);
+        tree.topDownDelete(253);
+        tree.topDownDelete(309);
+
+        tree.bottomUpInsert(10);
+        tree.bottomUpInsert(20);
+        tree.bottomUpInsert(5);
+        tree.bottomUpInsert(100);
+        tree.bottomUpInsert(150);
+        tree.bottomUpInsert(120);
+        tree.bottomUpInsert(90);
+        tree.bottomUpInsert(95);
+
+        tree.topDownDelete(100);
+        tree.topDownDelete(95);
     }
 }

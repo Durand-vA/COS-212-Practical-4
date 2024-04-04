@@ -124,28 +124,28 @@ public class RedBlackTree<T extends Comparable<T>> {
         SENTINEL.right.colour = BLACK;
     }
 
-    private STATE bottomUpInsertRecursion(T data, RedBlackNode<T> node) {
+    private INSERT_CHECK_STATES bottomUpInsertRecursion(T data, RedBlackNode<T> node) {
         if (data == null) {
-            return STATE.STOP_CHECK;
+            return INSERT_CHECK_STATES.STOP_CHECK;
         }
         if (node == NULL_NODE) {
             SENTINEL.right = new RedBlackNode<>(this, data, BLACK);
-            return STATE.STOP_CHECK;
+            return INSERT_CHECK_STATES.STOP_CHECK;
         }
         switch (Integer.compare(data.compareTo(node.data), 0)) {
             case -1:
                 if (node.left != NULL_NODE) {
                     switch (bottomUpInsertRecursion(data, node.left)) {
                         case STOP_CHECK:
-                            return STATE.STOP_CHECK;
+                            return INSERT_CHECK_STATES.STOP_CHECK;
                         case CHECK:
                             if (node.left.colour == BLACK) {
-                                return STATE.STOP_CHECK;
+                                return INSERT_CHECK_STATES.STOP_CHECK;
                             }
                             if (node.left.colour == node.right.colour) {
                                 flipColours(node);
                                 RedBlackNode<T> parent = getParent(node);
-                                return node.colour == parent.colour ? STATE.SKIP_CHECK : STATE.STOP_CHECK;
+                                return node.colour == parent.colour ? INSERT_CHECK_STATES.SKIP_CHECK : INSERT_CHECK_STATES.STOP_CHECK;
                             }
                             if (!(node.left.left == NULL_NODE) && node.left.colour == node.left.left.colour) {
                                 // Change node colours
@@ -153,7 +153,7 @@ public class RedBlackTree<T extends Comparable<T>> {
                                 node.left.colour = BLACK;
                                 // right rotate about node
                                 rotateRight(node);
-                                return STATE.STOP_CHECK;
+                                return INSERT_CHECK_STATES.STOP_CHECK;
                             }
                             if (!(node.left.right == NULL_NODE && node.left.right.data == null) && node.left.colour == node.left.right.colour) {
                                 node.colour = RED;
@@ -161,51 +161,51 @@ public class RedBlackTree<T extends Comparable<T>> {
                                 // left rotate about node.left, then right rotate about node
                                 rotateLeft(node.left, node);
                                 rotateRight(node);
-                                return STATE.STOP_CHECK;
+                                return INSERT_CHECK_STATES.STOP_CHECK;
                             }
                         case SKIP_CHECK:
-                            return STATE.CHECK;
+                            return INSERT_CHECK_STATES.CHECK;
                     }
                 } else {
                     node.left = new RedBlackNode<>(this, data, RED);
-                    return STATE.CHECK;
+                    return INSERT_CHECK_STATES.CHECK;
                 }
             case 1:
                 if (node.right != NULL_NODE) {
                     switch (bottomUpInsertRecursion(data, node.right)) {
                         case STOP_CHECK:
-                            return STATE.STOP_CHECK;
+                            return INSERT_CHECK_STATES.STOP_CHECK;
                         case CHECK:
                             if (node.right.colour == BLACK) {
-                                return STATE.STOP_CHECK;
+                                return INSERT_CHECK_STATES.STOP_CHECK;
                             }
                             if (node.left.colour == node.right.colour) {
                                 flipColours(node);
-                                return node.colour == getParent(node).colour ? STATE.SKIP_CHECK : STATE.STOP_CHECK;
+                                return node.colour == getParent(node).colour ? INSERT_CHECK_STATES.SKIP_CHECK : INSERT_CHECK_STATES.STOP_CHECK;
                             }
                             if (!(node.right.right == NULL_NODE) && node.right.colour == node.right.right.colour) {
                                 // Change node colours
                                 node.colour = RED;
                                 node.right.colour = BLACK;
                                 rotateLeft(node);
-                                return STATE.STOP_CHECK;
+                                return INSERT_CHECK_STATES.STOP_CHECK;
                             }
                             if (!(node.right.left == NULL_NODE) && node.right.colour == node.right.left.colour) {
                                 node.colour = RED;
                                 node.right.left.colour = BLACK;
                                 rotateRight(node.right);
                                 rotateLeft(node);
-                                return STATE.STOP_CHECK;
+                                return INSERT_CHECK_STATES.STOP_CHECK;
                             }
                         case SKIP_CHECK:
-                            return STATE.CHECK;
+                            return INSERT_CHECK_STATES.CHECK;
                     }
                 } else {
                     node.right = new RedBlackNode<>(this, data, RED);
-                    return STATE.CHECK;
+                    return INSERT_CHECK_STATES.CHECK;
                 }
             default:
-                return STATE.STOP_CHECK;
+                return INSERT_CHECK_STATES.STOP_CHECK;
         }
     }
 
@@ -269,6 +269,9 @@ public class RedBlackTree<T extends Comparable<T>> {
     }
 
     private boolean contains(T data) {
+        if (data == null) {
+            return false;
+        }
         return contains(data, SENTINEL.right);
     }
 
@@ -299,7 +302,7 @@ public class RedBlackTree<T extends Comparable<T>> {
             return;
         }
         current = sibling = parent = grandparent = NULL_NODE;
-        if (childrenColour(SENTINEL.right) == COLOUR_STATES.BLACK && !SENTINEL.right.data.equals(data)) {
+        if (childrenColour(SENTINEL.right) == COLOUR_STATES.BLACK && /* Check if root is to be deleted */!SENTINEL.right.data.equals(data)) {
             SENTINEL.right.colour = RED;
             grandparent = SENTINEL;
             parent = SENTINEL.right;
@@ -310,10 +313,11 @@ public class RedBlackTree<T extends Comparable<T>> {
             current = SENTINEL.right;
         }
 
-        while (!current.data.equals(data) || (current.colour != RED && isLeaf(current))) {
+        while (current != NULL_NODE && (!current.data.equals(data) || (current.colour != RED && isLeaf(current)))) {
             if (childrenColour(current) == COLOUR_STATES.BLACK) {
                 // Case 2A
                 // Don't worry about current being root, literally impossible
+                // Current can be  a leaf
                 switch (childrenColour(sibling)) {
                     case BLACK:
                         // 2A1
@@ -369,9 +373,14 @@ public class RedBlackTree<T extends Comparable<T>> {
                         }
                         break;
                 }
-                if (current.data != data)
+                // If current is a leaf, we don't want to move down the tree
+                if (!current.data.equals(data)) {
                     moveDownTree(data);
+                }
             } else {
+                // Current can't be a leaf, because one of its children are red
+                // Therefore, because of the loop condition "!current.data.equals(data) || (current.colour != RED && isLeaf(current))",
+                // since node current isn't leaf, "!current.data.equals(data)" must be true, so current cannot be the node to be deleted
                 // Case 2B
                 moveDownTree(data);
                 if (current.colour == RED) {
@@ -398,6 +407,10 @@ public class RedBlackTree<T extends Comparable<T>> {
                     }
                 }
             }
+        }
+
+        if (current == NULL_NODE) {
+            return;
         }
 
         // If not leaf, Colour will be black or red
@@ -457,13 +470,17 @@ public class RedBlackTree<T extends Comparable<T>> {
     }
 
     private void flipColoursDelete(RedBlackNode<T> node) {
-        node.left.colour = RED;
-        node.right.colour = RED;
+        if (node.left != NULL_NODE) {
+            node.left.colour = RED;
+        }
+        if (node.right != NULL_NODE) {
+            node.right.colour = RED;
+        }
         node.colour = BLACK;
     }
 
     private int compare(T data, RedBlackNode<T> node) {
-        if (node == SENTINEL) {
+        if (node == SENTINEL || node == NULL_NODE) {
             return 1;
         }
         return Integer.compare(data.compareTo(node.data), 0);
@@ -510,7 +527,7 @@ public class RedBlackTree<T extends Comparable<T>> {
 
 }
 
-enum STATE {
+enum INSERT_CHECK_STATES {
     STOP_CHECK, CHECK, SKIP_CHECK
 }
 
